@@ -14,11 +14,14 @@ enum BulletType { noun, pronoun, verb }
 
 class FallingBalloonsGame extends FlameGame with TapDetector {
   late Timer balloonSpawnTimer;
-  late AnimatedGunComponent gun;
+  late ModernGunComponent nounGun;
+  late ModernGunComponent pronounGun;
+  late ModernGunComponent verbGun;
   int score = 0;
+  int lives = 5;
   late TextComponent scoreText;
-  late TextComponent instructionText;
-  BulletType currentBulletType = BulletType.noun;
+  late TextComponent livesText;
+  late RectangleComponent gameBackground;
 
   // Word collections by type
   final Map<WordType, List<String>> wordsByType = {
@@ -61,61 +64,99 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
   };
 
   final Map<WordType, Color> wordTypeColors = {
-    WordType.noun: Colors.blue,
-    WordType.pronoun: Colors.green,
-    WordType.verb: Colors.red,
-  };
-
-  final Map<BulletType, Color> bulletTypeColors = {
-    BulletType.noun: Colors.blue,
-    BulletType.pronoun: Colors.green,
-    BulletType.verb: Colors.red,
+    WordType.noun: const Color(0xFF4A90E2), // Modern blue
+    WordType.pronoun: const Color(0xFF7ED321), // Modern green
+    WordType.verb: const Color(0xFFD0021B), // Modern red
   };
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Add animated gun at the bottom center
-    gun = AnimatedGunComponent(
-      position: Vector2(size.x / 2 - 30, size.y - 100),
-      onBulletTypeChanged: (newType) {
-        currentBulletType = newType;
-      },
+    // Modern gradient background
+    gameBackground = RectangleComponent(
+      size: size,
+      paint: Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1a1a2e), Color(0xFF16213e), Color(0xFF0f3460)],
+        ).createShader(Rect.fromLTWH(0, 0, size.x, size.y)),
     );
-    add(gun);
+    add(gameBackground);
 
-    // Add score display
+    // Position three guns at the bottom
+    final gunSpacing = size.x / 4;
+
+    // Noun Gun (Blue)
+    nounGun = ModernGunComponent(
+      position: Vector2(gunSpacing - 30, size.y - 120),
+      bulletType: BulletType.noun,
+      label: 'NOUN',
+      primaryColor: const Color(0xFF4A90E2),
+      secondaryColor: const Color(0xFF357ABD),
+    );
+    add(nounGun);
+
+    // Pronoun Gun (Green)
+    pronounGun = ModernGunComponent(
+      position: Vector2(gunSpacing * 2 - 30, size.y - 120),
+      bulletType: BulletType.pronoun,
+      label: 'PRONOUN',
+      primaryColor: const Color(0xFF7ED321),
+      secondaryColor: const Color(0xFF5BA91A),
+    );
+    add(pronounGun);
+
+    // Verb Gun (Red)
+    verbGun = ModernGunComponent(
+      position: Vector2(gunSpacing * 3 - 30, size.y - 120),
+      bulletType: BulletType.verb,
+      label: 'VERB',
+      primaryColor: const Color(0xFFD0021B),
+      secondaryColor: const Color(0xFFA00015),
+    );
+    add(verbGun);
+
+    // Modern UI elements
+    final uiBackground = RectangleComponent(
+      size: Vector2(size.x, 100),
+      paint: Paint()..color = const Color(0xFF1a1a2e).withOpacity(0.9),
+    );
+    add(uiBackground);
+
+    // Score display with modern styling
     scoreText = TextComponent(
-      text: 'Score: $score',
+      text: 'SCORE: $score',
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Colors.white,
           fontSize: 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 2,
         ),
       ),
-      position: Vector2(20, 50),
+      position: Vector2(30, 35),
     );
     add(scoreText);
 
-    // Add instruction text
-    instructionText = TextComponent(
-      text: 'Current Bullet: NOUN',
+    // Lives display
+    livesText = TextComponent(
+      text: '❤️ $lives',
       textRenderer: TextPaint(
         style: const TextStyle(
-          color: Colors.yellow,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
         ),
       ),
-      position: Vector2(20, 80),
+      position: Vector2(size.x - 100, 35),
     );
-    add(instructionText);
+    add(livesText);
 
     // Set up balloon spawning timer
     balloonSpawnTimer = Timer(
-      2.0, // Spawn every 2 seconds
+      1.8, // Spawn every 1.8 seconds
       onTick: spawnBalloon,
       repeat: true,
     );
@@ -127,16 +168,21 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
     super.update(dt);
     balloonSpawnTimer.update(dt);
 
-    // Update instruction text
-    instructionText.text =
-        'Current Bullet: ${currentBulletType.name.toUpperCase()}';
-
-    // Remove balloons that have fallen off screen
-    final balloonsToRemove = <WordBalloonComponent>[];
+    // Check for balloons that reached gun level (auto-burst and lose life)
+    final balloonsToRemove = <CleanBalloonComponent>[];
     for (final component in children) {
-      if (component is WordBalloonComponent &&
-          component.position.y > size.y + 100) {
-        balloonsToRemove.add(component);
+      if (component is CleanBalloonComponent) {
+        if (component.position.y > size.y - 200) {
+          // Balloon reached gun level - auto burst and lose life
+          balloonsToRemove.add(component);
+          lives--;
+          livesText.text = '❤️ $lives';
+          addExplosion(component.position, Colors.orange, isAutoBurst: true);
+
+          if (lives <= 0) {
+            // Game over logic could be added here
+          }
+        }
       }
     }
 
@@ -145,9 +191,9 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
     }
 
     // Remove bullets that have gone off screen
-    final bulletsToRemove = <TypedBulletComponent>[];
+    final bulletsToRemove = <ModernBulletComponent>[];
     for (final component in children) {
-      if (component is TypedBulletComponent && component.position.y < -50) {
+      if (component is ModernBulletComponent && component.position.y < -50) {
         bulletsToRemove.add(component);
       }
     }
@@ -161,13 +207,12 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
   }
 
   void checkCollisions() {
-    final bullets = children.whereType<TypedBulletComponent>().toList();
-    final balloons = children.whereType<WordBalloonComponent>().toList();
+    final bullets = children.whereType<ModernBulletComponent>().toList();
+    final balloons = children.whereType<CleanBalloonComponent>().toList();
 
     for (final bullet in bullets) {
       for (final balloon in balloons) {
         if (bullet.toRect().overlaps(balloon.toRect())) {
-          // Collision detected
           bullet.removeFromParent();
           balloon.removeFromParent();
 
@@ -182,42 +227,40 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
               (bulletType == BulletType.verb && wordType == WordType.verb);
 
           if (isCorrect) {
-            // Correct match - increase score
-            score += 20;
-            addExplosion(balloon.position, Colors.green);
+            score += 25;
+            addExplosion(balloon.position, const Color(0xFF00FF88));
           } else {
-            // Wrong match - decrease score
-            score -= 10;
-            if (score < 0) score = 0; // Don't go below 0
-            addExplosion(balloon.position, Colors.red);
+            score -= 15;
+            if (score < 0) score = 0;
+            addExplosion(balloon.position, const Color(0xFFFF4444));
           }
 
-          scoreText.text = 'Score: $score';
+          scoreText.text = 'SCORE: $score';
           break;
         }
       }
     }
   }
 
-  void addExplosion(Vector2 position, Color color) {
-    final explosion = ExplosionComponent(
+  void addExplosion(Vector2 position, Color color, {bool isAutoBurst = false}) {
+    final explosion = ModernExplosionComponent(
       position: position,
       explosionColor: color,
+      isAutoBurst: isAutoBurst,
     );
     add(explosion);
   }
 
   void spawnBalloon() {
     final random = Random();
-    final x = random.nextDouble() * (size.x - 100) + 50;
+    final x = random.nextDouble() * (size.x - 80) + 40;
 
-    // Randomly select word type
     final wordType = WordType.values[random.nextInt(WordType.values.length)];
     final words = wordsByType[wordType]!;
     final word = words[random.nextInt(words.length)];
     final color = wordTypeColors[wordType]!;
 
-    final balloon = WordBalloonComponent(
+    final balloon = CleanBalloonComponent(
       position: Vector2(x, -100),
       word: word,
       wordType: wordType,
@@ -231,135 +274,177 @@ class FallingBalloonsGame extends FlameGame with TapDetector {
   bool onTapDown(TapDownInfo info) {
     final tapPosition = info.eventPosition.global;
 
-    // Fire bullet towards tap position
-    fireBullet(tapPosition);
+    // Check which gun was tapped
+    if (nounGun.containsPoint(tapPosition)) {
+      fireFromGun(nounGun, tapPosition);
+    } else if (pronounGun.containsPoint(tapPosition)) {
+      fireFromGun(pronounGun, tapPosition);
+    } else if (verbGun.containsPoint(tapPosition)) {
+      fireFromGun(verbGun, tapPosition);
+    }
+
     return true;
   }
 
-  void fireBullet(Vector2 targetPosition) {
-    final gunPosition = gun.position + Vector2(30, 10); // Center of gun
-    final direction = (targetPosition - gunPosition).normalized();
+  void fireFromGun(ModernGunComponent gun, Vector2 targetPosition) {
+    gun.triggerFireAnimation();
 
-    final bullet = TypedBulletComponent(
-      position: gunPosition.clone(),
+    final gunCenter = gun.position + Vector2(30, 20);
+    final direction = Vector2(0, -1); // Shoot straight up
+
+    final bullet = ModernBulletComponent(
+      position: gunCenter.clone(),
       direction: direction,
-      bulletType: currentBulletType,
+      bulletType: gun.bulletType,
+      color: gun.primaryColor,
     );
 
     add(bullet);
   }
 }
 
-class AnimatedGunComponent extends PositionComponent {
-  final Function(BulletType) onBulletTypeChanged;
-  late Timer rotationTimer;
-  BulletType currentType = BulletType.noun;
-  double rotationAngle = 0;
+class ModernGunComponent extends PositionComponent {
+  final BulletType bulletType;
+  final String label;
+  final Color primaryColor;
+  final Color secondaryColor;
+  late TextComponent labelComponent;
+  late RectangleComponent gunBody;
   late RectangleComponent gunBarrel;
-  late CircleComponent bulletIndicator;
+  late CircleComponent gunBase;
+  double fireAnimationScale = 1.0;
+  bool isAnimating = false;
 
-  AnimatedGunComponent({
+  ModernGunComponent({
     required Vector2 position,
-    required this.onBulletTypeChanged,
-  }) : super(position: position, size: Vector2(60, 80));
+    required this.bulletType,
+    required this.label,
+    required this.primaryColor,
+    required this.secondaryColor,
+  }) : super(position: position, size: Vector2(60, 100));
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Gun base
-    final gunBase = RectangleComponent(
-      size: Vector2(40, 25),
-      position: Vector2(10, 50),
-      paint: Paint()..color = Colors.brown[800]!,
-    );
-
-    // Gun barrel (will be rotated)
-    gunBarrel = RectangleComponent(
-      size: Vector2(10, 40),
-      position: Vector2(25, 10),
-      paint: Paint()..color = Colors.grey[700]!,
+    // Gun base (circular)
+    gunBase = CircleComponent(
+      radius: 25,
+      position: Vector2(30, 70),
+      paint: Paint()
+        ..shader = RadialGradient(
+          colors: [primaryColor, secondaryColor],
+        ).createShader(const Rect.fromLTWH(0, 0, 50, 50)),
       anchor: Anchor.center,
     );
 
-    // Bullet type indicator
-    bulletIndicator = CircleComponent(
-      radius: 8,
-      position: Vector2(30, 60),
-      paint: Paint()..color = Colors.blue, // Start with noun (blue)
+    // Gun body (main part)
+    gunBody = RectangleComponent(
+      size: Vector2(20, 35),
+      position: Vector2(20, 35),
+      paint: Paint()
+        ..shader = LinearGradient(
+          colors: [primaryColor.withOpacity(0.9), secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(const Rect.fromLTWH(0, 0, 20, 35)),
+    );
+
+    // Gun barrel
+    gunBarrel = RectangleComponent(
+      size: Vector2(8, 25),
+      position: Vector2(26, 10),
+      paint: Paint()..color = const Color(0xFF2C2C2C),
+    );
+
+    // Label
+    labelComponent = TextComponent(
+      text: label,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(
+              color: primaryColor.withOpacity(0.8),
+              offset: const Offset(0, 1),
+              blurRadius: 2,
+            ),
+          ],
+        ),
+      ),
+      anchor: Anchor.center,
     );
 
     add(gunBase);
+    add(gunBody);
     add(gunBarrel);
-    add(bulletIndicator);
+    add(labelComponent);
 
-    // Set up rotation timer to change bullet types
-    rotationTimer = Timer(
-      3.0, // Change bullet type every 3 seconds
-      onTick: changeBulletType,
-      repeat: true,
-    );
-    rotationTimer.start();
+    await labelComponent.loaded;
+    labelComponent.position = Vector2(30, 85);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    rotationTimer.update(dt);
 
-    // Animate gun barrel rotation
-    rotationAngle += dt * 2; // Slow rotation
-    gunBarrel.angle = sin(rotationAngle) * 0.3; // Slight swaying motion
+    // Fire animation
+    if (isAnimating) {
+      fireAnimationScale += dt * 15;
+      if (fireAnimationScale > 1.2) {
+        fireAnimationScale = 1.0;
+        isAnimating = false;
+      }
+      scale = Vector2.all(fireAnimationScale);
+    }
   }
 
-  void changeBulletType() {
-    // Cycle through bullet types
-    switch (currentType) {
-      case BulletType.noun:
-        currentType = BulletType.pronoun;
-        bulletIndicator.paint.color = Colors.green;
-        break;
-      case BulletType.pronoun:
-        currentType = BulletType.verb;
-        bulletIndicator.paint.color = Colors.red;
-        break;
-      case BulletType.verb:
-        currentType = BulletType.noun;
-        bulletIndicator.paint.color = Colors.blue;
-        break;
-    }
-
-    onBulletTypeChanged(currentType);
+  void triggerFireAnimation() {
+    isAnimating = true;
+    fireAnimationScale = 1.0;
   }
 }
 
-class TypedBulletComponent extends PositionComponent {
+class ModernBulletComponent extends PositionComponent {
   final Vector2 direction;
   final BulletType bulletType;
-  final double speed = 350.0;
+  final Color color;
+  final double speed = 400.0;
+  late CircleComponent glowEffect;
 
-  TypedBulletComponent({
+  ModernBulletComponent({
     required Vector2 position,
     required this.direction,
     required this.bulletType,
-  }) : super(position: position, size: Vector2(6, 10));
+    required this.color,
+  }) : super(position: position, size: Vector2(8, 12));
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    final bulletColors = {
-      BulletType.noun: Colors.blue,
-      BulletType.pronoun: Colors.green,
-      BulletType.verb: Colors.red,
-    };
-
-    final bullet = CircleComponent(
-      radius: 3,
-      position: Vector2(0, 0),
-      paint: Paint()..color = bulletColors[bulletType]!,
+    // Glow effect
+    glowEffect = CircleComponent(
+      radius: 6,
+      position: Vector2(4, 6),
+      paint: Paint()..color = color.withOpacity(0.3),
+      anchor: Anchor.center,
     );
 
+    // Main bullet
+    final bullet = CircleComponent(
+      radius: 4,
+      position: Vector2(4, 6),
+      paint: Paint()
+        ..shader = RadialGradient(
+          colors: [Colors.white, color],
+        ).createShader(const Rect.fromLTWH(0, 0, 8, 8)),
+      anchor: Anchor.center,
+    );
+
+    add(glowEffect);
     add(bullet);
   }
 
@@ -367,38 +452,49 @@ class TypedBulletComponent extends PositionComponent {
   void update(double dt) {
     super.update(dt);
     position += direction * speed * dt;
+
+    // Animate glow
+    final pulse = sin(DateTime.now().millisecondsSinceEpoch * 0.01) * 0.5 + 0.5;
+    glowEffect.scale = Vector2.all(1.0 + pulse * 0.3);
   }
 }
 
-class ExplosionComponent extends PositionComponent {
+class ModernExplosionComponent extends PositionComponent {
   late Timer explosionTimer;
-  final List<CircleComponent> particles = [];
+  final List<Component> particles = [];
   final Color explosionColor;
+  final bool isAutoBurst;
 
-  ExplosionComponent({required Vector2 position, required this.explosionColor})
-    : super(position: position, size: Vector2(60, 60));
+  ModernExplosionComponent({
+    required Vector2 position,
+    required this.explosionColor,
+    this.isAutoBurst = false,
+  }) : super(position: position, size: Vector2(80, 80));
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Create explosion particles
     final random = Random();
-    for (int i = 0; i < 10; i++) {
+    final particleCount = isAutoBurst ? 15 : 12;
+
+    for (int i = 0; i < particleCount; i++) {
       final particle = CircleComponent(
-        radius: random.nextDouble() * 4 + 2,
+        radius: random.nextDouble() * 5 + 3,
         position: Vector2(
-          random.nextDouble() * 60 - 30,
-          random.nextDouble() * 60 - 30,
+          random.nextDouble() * 80 - 40,
+          random.nextDouble() * 80 - 40,
         ),
-        paint: Paint()..color = explosionColor.withOpacity(0.8),
+        paint: Paint()
+          ..shader = RadialGradient(
+            colors: [explosionColor, explosionColor.withOpacity(0.3)],
+          ).createShader(const Rect.fromLTWH(0, 0, 10, 10)),
       );
       particles.add(particle);
       add(particle);
     }
 
-    // Remove explosion after short time
-    explosionTimer = Timer(0.6, onTick: () => removeFromParent());
+    explosionTimer = Timer(0.8, onTick: () => removeFromParent());
     explosionTimer.start();
   }
 
@@ -407,115 +503,98 @@ class ExplosionComponent extends PositionComponent {
     super.update(dt);
     explosionTimer.update(dt);
 
-    // Animate particles
     for (final particle in particles) {
-      particle.scale = Vector2.all(particle.scale.x * 0.94);
-      if (particle.scale.x < 0.1) {
-        particle.removeFromParent();
+      if (particle is CircleComponent) {
+        particle.scale = Vector2.all(particle.scale.x * 0.92);
+        if (particle.scale.x < 0.1) {
+          particle.removeFromParent();
+        }
       }
     }
   }
 }
 
-class WordBalloonComponent extends PositionComponent {
+class CleanBalloonComponent extends PositionComponent {
   final String word;
   final WordType wordType;
   final Color color;
   late TextComponent textComponent;
-  final double fallSpeed = 60.0;
+  final double fallSpeed = 70.0;
 
-  WordBalloonComponent({
+  CleanBalloonComponent({
     required Vector2 position,
     required this.word,
     required this.wordType,
     required this.color,
-  }) : super(position: position, size: Vector2(90, 110));
+  }) : super(position: position, size: Vector2(70, 90));
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Create the balloon shape with word type color
+    // Modern balloon with gradient
     final balloonBody = CircleComponent(
-      radius: 40,
-      position: Vector2(5, 10),
-      paint: Paint()..color = color,
+      radius: 32,
+      position: Vector2(35, 35),
+      paint: Paint()
+        ..shader = RadialGradient(
+          colors: [color.withOpacity(0.9), color, color.withOpacity(0.7)],
+        ).createShader(const Rect.fromLTWH(0, 0, 64, 64)),
+      anchor: Anchor.center,
     );
 
-    // Balloon string
+    // Subtle balloon string
     final balloonString = RectangleComponent(
-      size: Vector2(2, 35),
-      position: Vector2(44, 85),
-      paint: Paint()..color = Colors.black,
+      size: Vector2(1, 25),
+      position: Vector2(34, 65),
+      paint: Paint()..color = Colors.white.withOpacity(0.6),
     );
 
-    // Word label on balloon
+    // Word text (clean, no type label)
     textComponent = TextComponent(
       text: word,
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          shadows: [
+            Shadow(color: Colors.black26, offset: Offset(1, 1), blurRadius: 2),
+          ],
         ),
       ),
-    );
-
-    // Word type label (small)
-    final typeLabel = TextComponent(
-      text: wordType.name.toUpperCase(),
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Colors.yellow,
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+      anchor: Anchor.center,
     );
 
     add(balloonBody);
     add(balloonString);
     add(textComponent);
-    add(typeLabel);
 
-    // Position text after adding to get proper size
     await textComponent.loaded;
-    await typeLabel.loaded;
-
-    textComponent.position = Vector2(
-      45 - textComponent.size.x / 2,
-      40 - textComponent.size.y / 2,
-    );
-
-    typeLabel.position = Vector2(45 - typeLabel.size.x / 2, 55);
+    textComponent.position = Vector2(35, 35);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
-    // Make balloon fall down
     position.y += fallSpeed * dt;
 
-    // Add slight horizontal wobble
-    final wobble = sin(position.y * 0.008) * 0.8;
-    position.x += wobble;
+    // Gentle floating animation
+    final float = sin(position.y * 0.005) * 1.2;
+    position.x += float * dt;
   }
 }
 
-// Alternative main function with proper Flutter app structure
 class BalloonGameApp extends StatelessWidget {
+  const BalloonGameApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Word Type Balloon Shooter',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'Modern Word Shooter',
+      theme: ThemeData.dark().copyWith(primaryColor: const Color(0xFF4A90E2)),
       home: Scaffold(body: GameWidget(game: FallingBalloonsGame())),
       debugShowCheckedModeBanner: false,
     );
   }
 }
-
-// Use this main function for a complete Flutter app
-// void main() {
-//   runApp(BalloonGameApp());
-// }
