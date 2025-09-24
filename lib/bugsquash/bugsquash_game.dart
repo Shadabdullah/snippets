@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:games/bugsquash/bug_sprite.dart';
 
 class BugsquashGame extends FlameGame {
   @override
@@ -12,13 +13,9 @@ class BugsquashGame extends FlameGame {
 
   @override
   FutureOr<void> onLoad() async {
-    final bugSprite = await Sprite.load("bug.png");
-    final bugComponent = SpriteComponent(
-      sprite: bugSprite,
-      size: Vector2(50, 50),
-    );
-    bugComponent.position = Vector2(100, 300);
-    bugComponent.anchor = Anchor.topLeft;
+    final bugComponent = Bug();
+    bugComponent.position = Vector2(size.x / 2, size.y / 2);
+    bugComponent.anchor = Anchor.center;
     add(bugComponent);
     return super.onLoad();
   }
