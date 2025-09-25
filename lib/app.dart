@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:games/breaker/base_app.dart';
-import 'package:get/get.dart';
-
-import 'breaker/game_state_controller.dart';
+import 'package:games/shoots/shoot_app.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Get.put(GameStateController());
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: SafeArea(
