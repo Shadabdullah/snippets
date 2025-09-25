@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:games/breaker/breaker_game.dart';
+import 'package:games/breaker/game_board.dart';
 import 'package:games/breaker/game_state_controller.dart';
 import 'package:games/breaker/game_state_enum.dart';
 import 'package:games/breaker/screens.dart';

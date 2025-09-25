@@ -2,9 +2,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:games/breaker/breaker_game.dart';
 
-import 'package:flutter/material.dart';
+import 'package:games/breaker/game_constants.dart';
 import 'package:get/get.dart';
-import 'package:games/breaker/breaker_game.dart';
 import 'game_state_controller.dart';
 import 'game_state_enum.dart';
 
@@ -22,7 +21,7 @@ class GameBoard extends StatelessWidget {
       children: [
         const SizedBox(height: 20),
         // Example logo
-        Image.asset('assets/logo.png', width: 200),
+        Image.asset('assets/images/bug.png', width: 50, height: 50),
         const SizedBox(height: 20),
 
         Container(
