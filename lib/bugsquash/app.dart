@@ -12,7 +12,7 @@ class App extends StatelessWidget {
       home: SafeArea(
         child: Scaffold(
           backgroundColor: Colors.red,
-          body: GameWidget(game: BugsquashGame()),
+          body: GameWidget(game: BugSquashGame()),
         ),
       ),
     );

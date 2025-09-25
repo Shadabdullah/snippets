@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flame: ^1.32.0
+  flame_audio: ^2.11.10
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +59,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/bug.png
+    - assets/images/squashed.png
+    - assets/audio/squash.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
