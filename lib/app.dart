@@ -1,6 +1,5 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:games/bugsquash/bugsquash_game.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -12,7 +11,7 @@ class App extends StatelessWidget {
       home: SafeArea(
         child: Scaffold(
           backgroundColor: Colors.red,
-          body: GameWidget(game: BugSquashGame()),
+          body: GameWidget(game: BalloonShoot()),
         ),
       ),
     );
