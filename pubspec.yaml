@@ -63,6 +63,7 @@ flutter:
     - assets/images/bug.png
     - assets/images/cannon.png
     - assets/images/barrel.png
+    - assets/images/balloons.png
     - assets/images/bullet.png
     - assets/images/squashed.png
     - assets/audio/squash.mp3
