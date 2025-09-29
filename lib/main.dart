@@ -266,7 +266,7 @@ class _LessonPathScreenState extends State<LessonPathScreen>
     return Container(
       key: _lessonKeys[index],
       margin: EdgeInsets.only(
-        left: screenWidth / 2 + centerOffset - 60,
+        left: screenWidth / 2 + centerOffset - 40,
         top: positionInRow == 0 ? 40 : 12,
         bottom: 12,
       ),
