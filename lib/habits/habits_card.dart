@@ -2,6 +2,8 @@
 
 // ==================== MODELS ====================
 
+import 'package:flutter/material.dart';
+
 class StoredHabit {
   final String id;
   final String name;

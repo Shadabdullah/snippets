@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:games/habitstats/stats.dart';
 
 void main() {
   runApp(
@@ -17,7 +16,7 @@ void main() {
           useInheritedMediaQuery: true,
           builder: (context, child) {
             ScreenUtil.configure(data: MediaQuery.of(context));
-            return MaterialApp(home: const HabitTrackerDemo());
+            return const MyStats();
           },
         );
       },
