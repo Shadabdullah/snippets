@@ -82,8 +82,8 @@ class HeatMapColorTip extends StatelessWidget {
     for (int i = 0; i < (containerCount ?? _defaultLength); i++) {
       children.add(
         _tipContainer(
-          colorsets?.values.first.withOpacity(
-                i / (containerCount ?? _defaultLength),
+          colorsets?.values.first.withValues(
+                alpha: i / (containerCount ?? _defaultLength),
               ) ??
               Colors.white,
         ),
